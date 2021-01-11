@@ -17,8 +17,9 @@ GameObject:
   - component: {fileID: 9164381181225555390}
   - component: {fileID: 9164381181225555391}
   - component: {fileID: 9164381181225555367}
-  - component: {fileID: 9164381181225555366}
-  - component: {fileID: 7996778849332316722}
+  - component: {fileID: 6468593809451236765}
+  - component: {fileID: -1757281910030615454}
+  - component: {fileID: 7956092833027425693}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -350,7 +351,7 @@ MonoBehaviour:
     EnableVisualDebugger: 1
     Port: 25001
     TimerBufferSize: 1048576
---- !u!114 &9164381181225555366
+--- !u!114 &6468593809451236765
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -359,10 +360,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 9164381181225555384}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc0434d972232694fa008a97ce86d163, type: 3}
+  m_Script: {fileID: 11500000, guid: e067e4240f7e6894ba88c26bafa6e3ad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &7996778849332316722
+--- !u!114 &-1757281910030615454
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -374,6 +375,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41138ffd39b806042bb00523f16c6fa3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  value: 1
+  value: 5
   invincibleTimer: 0
-  killTimer: 1
+  killTimer: 0
+--- !u!114 &7956092833027425693
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9164381181225555384}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c90f4e9a4b82a714d9f56737c6b8a868, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  value: 0

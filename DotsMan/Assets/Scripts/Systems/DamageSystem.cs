@@ -42,18 +42,20 @@ public class DamageSystem : SystemBase
 		})
 			.ScheduleParallel();
 
-		Entities
-			.WithNone<Kill>()
-			.ForEach((Entity e, ref Health hp) =>
+		//method 1 to manipulate entity components at runtime
 		{
-			hp.invincibleTimer -= dt;
-			if (hp.value <= 0)
+			Entities
+				.WithNone<Kill>()
+				.ForEach((Entity e, ref Health hp) =>
 			{
-				EntityManager.AddComponentData(e, new Kill() {timer=hp.killTimer });
-			}
+				hp.invincibleTimer -= dt;
+				if (hp.value <= 0)
+				{
+					EntityManager.AddComponentData(e, new Kill() { timer = hp.killTimer });
+				}
 
-		}).WithStructuralChanges().Run(); //method 1 to manipulate entity components at runtime
-
+			}).WithStructuralChanges().Run();
+		}
 
 		//method 2 to manipulate entities at runtime (use a ECB)
 		{

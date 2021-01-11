@@ -6,8 +6,6 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class PhysicsEventsAuthoring : MonoBehaviour, IConvertGameObjectToEntity
 {
-    public float hp;
-
     
     
 
@@ -16,6 +14,5 @@ public class PhysicsEventsAuthoring : MonoBehaviour, IConvertGameObjectToEntity
         //dstManager.AddComponent(entity,)
         dstManager.AddBuffer<CollisionBufferData>(entity);
         dstManager.AddBuffer<TriggerBuffer>(entity);
-
     }
 }
