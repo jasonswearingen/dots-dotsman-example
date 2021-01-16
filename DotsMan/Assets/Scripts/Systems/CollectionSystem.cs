@@ -5,85 +5,199 @@ using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
+using Unity.Collections.LowLevel.Unsafe;
 
-public class CollectionSystem : SystemBase
+//EXAMPLE: important!  different ways to modify entities in parallel.
+
+unsafe public class CollectionSystem : SystemBase
 {
-    protected override void OnUpdate()
-    {
-		// Assign values to local variables captured in your job here, so that it has
-		// everything it needs to do its work when it runs later.
-		// For example,
-		//     float deltaTime = Time.DeltaTime;
+	//private NativeReference<int> _pointsToAdd;
+	//private int* p_pointsToAdd;
+	//unsafe protected override void OnCreate()
+	//{
+	//	//_pointsToAdd = new Unity.Collections.NativeArray<int>(1, Allocator.Persistent);
+	//	//p_pointsToAdd = (int*)Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(this._pointsToAdd);
+	//	_pointsToAdd = new NativeReference<int>(Allocator.Persistent);
+	//	p_pointsToAdd = (int*)_pointsToAdd.GetUnsafePtr();
+	//	base.OnCreate();
+	//}
 
-		// This declares a new kind of job, which is a unit of work to do.
-		// The job is declared as an Entities.ForEach with the target components as parameters,
-		// meaning it will process all entities in the world that have both
-		// Translation and Rotation components. Change it to process the component
-		// types you want.
+	//protected override void OnDestroy()
+	//{
+	//	_pointsToAdd.Dispose(this.Dependency);
+	//	base.OnDestroy();
+	//}
 
-
+	unsafe protected override void OnUpdate()
+	{
+		//System.GC.Collect();
 		//itterate every player that has a triggerbuffer
 		//look at entities in triggerbuffer, and if any have a collectable, mark the collectable to be killed
 
-		//      {
-		//          var ecb = World.GetOrCreateSystem<EndSimulationEntityCommandBufferSystem>().CreateCommandBuffer();
+		////single threaded
+		//{
+		//	var ecb = World.GetOrCreateSystem<EndSimulationEntityCommandBufferSystem>().CreateCommandBuffer();
+		//	var pointsToAdd = 0;
 
-		//          Entities
-		//              .WithAll<Player>()
-		//              .ForEach((DynamicBuffer<TriggerBuffer> tBuffer, in Player player) =>
-		//              {
-		//                  for (var i = 0; i < tBuffer.Length; i++)
-		//                  {
-		//                      var _tb = tBuffer[i];
+		//	Entities
+		//		.WithAll<Player>()
+		//		.ForEach((Entity playerEntity, DynamicBuffer<TriggerBuffer> tBuffer, in Player player) =>
+		//		{
+		//			for (var i = 0; i < tBuffer.Length; i++)
+		//			{
+		//				var _tb = tBuffer[i];
 
-		//                      if (HasComponent<Collectable>(_tb.entity) && !HasComponent<Kill>(_tb.entity))
-		//                      {
-		//                          ecb.AddComponent(_tb.entity, new Kill() { timer = 0 });
-		//                      }
-		//                  }
-		//              }).Run();
+		//				if (HasComponent<Collectable>(_tb.entity) && !HasComponent<Kill>(_tb.entity))
+		//				{
+		//					ecb.AddComponent(_tb.entity, new Kill() { timer = 0 });
+		//				}
 
+		//				if (HasComponent<Collectable>(_tb.entity) && !HasComponent<Kill>(_tb.entity))
+		//				{
+		//					ecb.AddComponent(_tb.entity, new Kill() { timer = 0 });
+		//					var collectable = GetComponent<Collectable>(_tb.entity);
+		//					pointsToAdd += collectable.points;
+		//					//System.Threading.Interlocked.Add(ref pointsToAdd, collectable.points);
+		//					//GameManager.instance.AddPoints(collectable.points);
+		//				}
+
+		//				if (HasComponent<PowerPill>(_tb.entity) && !HasComponent<Kill>(_tb.entity))
+		//				{
+		//					ecb.AddComponent(_tb.entity, new Kill() { timer = 0 });
+		//					var pill = GetComponent<PowerPill>(_tb.entity);
+		//					ecb.AddComponent(playerEntity, pill);
+		//				}
+		//			}
+		//		}).WithoutBurst().Run();
+
+		//	GameManager.instance.AddPoints(pointsToAdd);
 		//}
 
+		////parallel using class field for accumulation
+		//{
+		//	var ecbSystem = World.GetOrCreateSystem<EndSimulationEntityCommandBufferSystem>();
+		//	var ecb = ecbSystem.CreateCommandBuffer().AsParallelWriter();
+		//	var p_pointsToAdd = this.p_pointsToAdd;  
+
+		//	Entities
+		//			.WithAll<Player>()
+		//			.ForEach((int entityInQueryIndex, Entity playerEntity, DynamicBuffer<TriggerBuffer> triggerBuffer, in Player player) =>
+		//		{
+		//			for (var i = 0; i < triggerBuffer.Length; i++)
+		//			{
+		//				var _tb = triggerBuffer[i];
+
+		//				if (HasComponent<Collectable>(_tb.entity) && !HasComponent<Kill>(_tb.entity))
+		//				{
+		//					ecb.AddComponent(entityInQueryIndex, _tb.entity, new Kill() { timer = 0 });
+		//					var collectable = GetComponent<Collectable>(_tb.entity);
+		//					System.Threading.Interlocked.Add(ref *p_pointsToAdd, collectable.points);
+		//				}
+
+		//				if (HasComponent<PowerPill>(_tb.entity) && !HasComponent<Kill>(_tb.entity))
+		//				{
+		//					ecb.AddComponent(entityInQueryIndex, _tb.entity, new Kill() { timer = 0 });
+		//					var pill = GetComponent<PowerPill>(_tb.entity);
+		//					ecb.AddComponent(entityInQueryIndex, playerEntity, pill);
+		//				}
+		//			}
+		//		})
+		//			.WithNativeDisableUnsafePtrRestriction(p_pointsToAdd)
+		//			.ScheduleParallel();
+
+
+		//	ecbSystem.AddJobHandleForProducer(this.Dependency);
+
+		//	if (_pointsToAdd.Value != 0)
+		//	{
+		//		var pointsToAdd = System.Threading.Interlocked.Exchange(ref *p_pointsToAdd, 0);
+		//		GameManager.instance.AddPoints(pointsToAdd);
+		//	}
+		//}
+
+
+		//UNSAFE parallel using only job temp variable
+		//SAFE nativeQueue parallel version
 		{
 			var ecbSystem = World.GetOrCreateSystem<EndSimulationEntityCommandBufferSystem>();
 			var ecb = ecbSystem.CreateCommandBuffer().AsParallelWriter();
+			//SAFE nativeQueue
+			var EXAMPLE_SAFE_queue = new NativeQueue<int>(Allocator.TempJob);
+			var EXAMPLE_SAFE_queue_writer = EXAMPLE_SAFE_queue.AsParallelWriter();
+			//UNSAFE
+			var pointsToAdd =new NativeReference<int>(Allocator.TempJob);
+			var p_pointsToAdd =(int*) pointsToAdd.GetUnsafePtr();
+			//SAFE nativeArray
+			var EXAMPLE_SAFE_array = new NativeArray<int>(_query.CalculateEntityCount(), Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+
+
 
 			Entities
-				.WithAll<Player>()
-				.ForEach((int entityInQueryIndex, Entity playerEntity, DynamicBuffer<TriggerBuffer> tBuffer, in Player player) =>
-			{
-				for (var i = 0; i < tBuffer.Length; i++)
-				{
-					var _tb = tBuffer[i];
-
-					if (HasComponent<Collectable>(_tb.entity) && !HasComponent<Kill>(_tb.entity))
+				.WithStoreEntityQueryInField(ref _query) 
+					.WithAll<Player>()
+					.ForEach((int nativeThreadIndex, int entityInQueryIndex, Entity playerEntity, DynamicBuffer<TriggerBuffer> triggerBuffer, in Player player) =>
 					{
-						ecb.AddComponent(entityInQueryIndex, _tb.entity, new Kill() { timer = 0 });
-					}
+						var pointsToAdd = 0;
+						for (var i = 0; i < triggerBuffer.Length; i++)
+						{
+							var _tb = triggerBuffer[i];
 
-					if (HasComponent<PowerPill>(_tb.entity) && !HasComponent<Kill>(_tb.entity))
-					{
-						ecb.AddComponent(entityInQueryIndex, _tb.entity, new Kill() { timer = 0 });
-						var pill = GetComponent<PowerPill>(_tb.entity);
-						ecb.AddComponent(entityInQueryIndex, playerEntity, pill);
-						//ecb.AddComponent(entityInQueryIndex, playerEntity, new PowerPill() { pillTimer = pill.pillTimer });
-					}
-				}
-			}).ScheduleParallel();
+							if (HasComponent<Collectable>(_tb.entity) && !HasComponent<Kill>(_tb.entity))
+							{
+								ecb.AddComponent(entityInQueryIndex, _tb.entity, new Kill() { timer = 0 });
+								var collectable = GetComponent<Collectable>(_tb.entity);
+								//UNSAFE
+								System.Threading.Interlocked.Add(ref *p_pointsToAdd, collectable.points);
+								//SAFE nativeQueue
+								EXAMPLE_SAFE_queue_writer.Enqueue(collectable.points);
+								//SAFE nativeArray (part 1/2)
+								pointsToAdd += collectable.points;
+								
+							}
+
+							if (HasComponent<PowerPill>(_tb.entity) && !HasComponent<Kill>(_tb.entity))
+							{
+								ecb.AddComponent(entityInQueryIndex, _tb.entity, new Kill() { timer = 0 });
+								var pill = GetComponent<PowerPill>(_tb.entity);
+								ecb.AddComponent(entityInQueryIndex, playerEntity, pill);
+							}
+						}
+						//SAFE nativeArray (part 2/2)
+						EXAMPLE_SAFE_array[entityInQueryIndex] = pointsToAdd;
+					})
+					.WithNativeDisableUnsafePtrRestriction(p_pointsToAdd)
+					.ScheduleParallel();
+
 
 			ecbSystem.AddJobHandleForProducer(this.Dependency);
-		}
 
-		//Entities.ForEach((ref Translation translation, in Rotation rotation) => {
-		//    // Implement the work to perform for each entity here.
-		//    // You should only access data that is local or that is a
-		//    // field on this job. Note that the 'rotation' parameter is
-		//    // marked as 'in', which means it cannot be modified,
-		//    // but allows this job to run in parallel with other jobs
-		//    // that want to read Rotation component data.
-		//    // For example,
-		//    //     translation.Value += math.mul(rotation.Value, new float3(0, 0, 1)) * deltaTime;
-		//}).Schedule();
+			
+			Job.WithReadOnly(pointsToAdd).WithCode(() => {
+				//UNSAFE
+				GameManager.instance.AddPoints(pointsToAdd.Value);
+				//SAFE nativeQueue
+				while (EXAMPLE_SAFE_queue.TryDequeue(out var pts))
+				{
+					GameManager.instance.AddPoints(pts);
+				}
+				//SAFE nativeArray				
+				foreach (var pointsToAdd in EXAMPLE_SAFE_array)
+				{
+					GameManager.instance.AddPoints(pointsToAdd);
+				}
+			})
+			//.WithDisposeOnCompletion(pointsToAdd) //doesn't work
+			.WithoutBurst()
+			.Run();
+
+			pointsToAdd.Dispose(this.Dependency); //pointsToAdd.Dispose() would also work, as internally it finds this.Dependency
+			EXAMPLE_SAFE_queue.Dispose(this.Dependency);
+			EXAMPLE_SAFE_array.Dispose(this.Dependency);
+		}
 	}
+	/// <summary>
+	/// this "works" due to burst codegen.  see https://forum.unity.com/threads/withstoreentityqueryinfield-how-can-query-be-used-before-invocation.865681/
+	/// </summary>
+	private EntityQuery _query = new EntityQuery();
+	
 }
