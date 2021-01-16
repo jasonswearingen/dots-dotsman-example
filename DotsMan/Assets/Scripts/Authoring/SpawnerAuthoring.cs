@@ -4,7 +4,7 @@ using Unity.Mathematics;
 using UnityEngine;
 
 [DisallowMultipleComponent]
-public class SpawnerAuthoring : MonoBehaviour, IConvertGameObjectToEntity, IDeclareReferencedPrefabs
+public class SpawnerAuthoring : MonoBehaviour, IConvertGameObjectToEntity, IDeclareReferencedPrefabs  //EXAMPLE: must use IDeclareReferencedPrefabs to use prefabs
 {
     // Add fields to your component here. Remember that:
     //
