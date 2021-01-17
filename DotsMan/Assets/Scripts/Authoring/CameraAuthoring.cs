@@ -8,13 +8,8 @@ class CameraAuthoring : MonoBehaviour, IConvertGameObjectToEntity
 
 	public void Convert(Entity entity, EntityManager dstManager, GameObjectConversionSystem conversionSystem)
 	{
-		//dstManager.AddComponent(entity, new CameraTag() { });
+		dstManager.AddComponentData(entity, new CameraTag() { });
 		conversionSystem.AddHybridComponent(audioListener);
 		conversionSystem.AddHybridComponent(cam);
 	}
 }
-
-//public struct CameraTag : ComponentType
-//{
-
-//}

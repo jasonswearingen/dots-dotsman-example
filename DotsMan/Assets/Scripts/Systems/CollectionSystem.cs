@@ -119,6 +119,8 @@ unsafe public class CollectionSystem : SystemBase
 		//UNSAFE parallel using only job temp variable
 		//SAFE nativeQueue parallel version
 		{
+			
+
 			var ecbSystem = World.GetOrCreateSystem<EndSimulationEntityCommandBufferSystem>();
 			var ecb = ecbSystem.CreateCommandBuffer().AsParallelWriter();
 			//SAFE nativeQueue
@@ -129,9 +131,6 @@ unsafe public class CollectionSystem : SystemBase
 			var p_pointsToAdd =(int*) pointsToAdd.GetUnsafePtr();
 			//SAFE nativeArray
 			var EXAMPLE_SAFE_array = new NativeArray<int>(_query.CalculateEntityCount(), Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-
-
-
 			Entities
 				.WithStoreEntityQueryInField(ref _query) 
 					.WithAll<Player>()
@@ -199,5 +198,5 @@ unsafe public class CollectionSystem : SystemBase
 	/// this "works" due to burst codegen.  see https://forum.unity.com/threads/withstoreentityqueryinfield-how-can-query-be-used-before-invocation.865681/
 	/// </summary>
 	private EntityQuery _query = new EntityQuery();
-	
+
 }

@@ -19,6 +19,7 @@ GameObject:
   - component: {fileID: 3061987751031679289}
   - component: {fileID: 1881786888542476187}
   - component: {fileID: -8723232553768753891}
+  - component: {fileID: 9204727455813576662}
   m_Layer: 0
   m_Name: Enemy
   m_TagString: Untagged
@@ -372,3 +373,18 @@ MonoBehaviour:
   value: 10
   invincibleTimer: 0
   killTimer: 0
+--- !u!114 &9204727455813576662
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3910177335002046164}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56c22557f436f16409ffa141cc327853, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sfxName: GhostDeath
+  pointValue: 333
+  spawnPrefab: {fileID: 0}
