@@ -21,6 +21,10 @@ public class CameraSystem : SystemBase
 
 
 		var camQuery = GetEntityQuery(typeof(CameraTag), typeof(Follow));
+		if (camQuery.CalculateEntityCount() == 0)
+		{
+			return;
+		}
 		var camEnt = camQuery.GetSingletonEntity();
 		var camFollow = GetComponent<Follow>(camEnt);
 
@@ -42,5 +46,6 @@ public class CameraSystem : SystemBase
 					}).Run();
 
 		SetComponent(camEnt, camFollow);
+		
 	}
 }

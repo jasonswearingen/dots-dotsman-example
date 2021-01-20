@@ -7,7 +7,7 @@ using Unity.Physics;
 using Unity.Transforms;
 using Unity.Physics.Systems;
 using Assets.Scripts.Components;
-
+using Unity.Collections.LowLevel.Unsafe;
 
 [UpdateAfter(typeof(EndFramePhysicsSystem))] //seems not needed anymore
 [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
@@ -25,7 +25,8 @@ public class DamageSystem : SystemBase
 
 	//}
 
-
+	[Unity.Collections.LowLevel.Unsafe.NativeSetThreadIndex]
+	public int nativeThreadIndex;
 	protected override void OnUpdate()
 	{
 		var dt = Time.DeltaTime;
@@ -67,7 +68,8 @@ public class DamageSystem : SystemBase
 			//var sfxPlay = new NativeQueue<FixedString64>(Allocator.TempJob);			
 			var onKillQueue = new NativeQueue<ECTuple<OnKill>>(Allocator.TempJob);
 			//var tst = new NativeList<ECTuple<OnKill>>(Allocator.TempJob);
-			
+
+
 
 			Entities
 				.ForEach((Entity e, int entityInQueryIndex, ref Kill kill, in Translation trns, in Rotation rot) =>
@@ -80,7 +82,7 @@ public class DamageSystem : SystemBase
 					{
 						var onKill = GetComponent<OnKill>(e);
 						//sfxPlay.Enqueue(onKill.sfxName);
-						onKillQueue.Enqueue(new ECTuple<OnKill>() {e=e, component=onKill });
+						onKillQueue.Enqueue(new ECTuple<OnKill>() { e = e, component = onKill });
 						if (HasComponent<Translation>(onKill.spawnPrefab)) //non-burst: EntityManager.Exists(onKill.spawnPrefab)
 						{
 							var spawned = ecb.Instantiate(entityInQueryIndex, onKill.spawnPrefab);
@@ -90,29 +92,116 @@ public class DamageSystem : SystemBase
 					}
 
 					ecb.DestroyEntity(entityInQueryIndex, e); //https://docs.unity3d.com/Packages/com.unity.entities@0.16/api/Unity.Entities.EntityCommandBuffer.ParallelWriter.html?q=EntityCommandBuffer#Unity_Entities_EntityCommandBuffer_ParallelWriter_DestroyEntity_System_Int32_Unity_Entities_Entity_
-					
+
 				}
 			}).Schedule();
 			ecbSystem.AddJobHandleForProducer(this.Dependency); //note that the ecbSystem needs to wait for this DamageSystem to complete
 
-			Job.WithReadOnly(onKillQueue).WithCode(() =>
-			{
-				//while (sfxPlay.TryDequeue(out var fstr_sfx))
-				//{
-				//	AudioManager.instance.PlaySfxRequest(fstr_sfx.ConvertToString());
-				//}
-				var ecb = ecbSystem.CreateCommandBuffer();
-				while (onKillQueue.TryDequeue(out var tuple))
-				{
-					AudioManager.instance.PlaySfxRequest(tuple.component.sfxName.ConvertToString());
-					GameManager.instance.AddPoints(tuple.component.pointValue);
-				}
-			})
-				.WithoutBurst().Run();
+			var audioQueue = AudioSystem.messageIn;
 
+			//Job
+			//	//.WithReadOnly(onKillQueue)
+			//	.WithCode(() =>
+			//{
+
+
+
+			//	//while (sfxPlay.TryDequeue(out var fstr_sfx))
+			//	//{
+			//	//	AudioManager.instance.PlaySfxRequest(fstr_sfx.ConvertToString());
+			//	//}
+			//	//var ecb = ecbSystem.CreateCommandBuffer();
+			//	while (onKillQueue.TryDequeue(out var tuple))
+			//	{
+			//		var audioMessage = new AudioSystem.AudioMessage() { audioFile = tuple.component.sfxName, type = SystemMessageType.Audio_Sfx };
+			//		audioQueue.Enqueue(audioMessage);
+
+			//		//AudioManager.instance.PlaySfxRequest(tuple.component.sfxName.ConvertToString());
+			//		//int i = 0;
+			//		//i++;
+			//		//GameManager.instance.AddPoints(tuple.component.pointValue);
+			//	}
+			//})
+			//	//.WithoutBurst().Run();
+
+			//	.Schedule();
+
+			var job = new SendKillMessageJob() {onKillQueue=onKillQueue, threadQueue = MessageSystem.threadQueue };
+			var sendKillHandle = job.Schedule(this.Dependency);
+			sendKillHandle.Complete();
+			//onKillQueue.com
 			//sfxPlay.Dispose();
-			onKillQueue.Dispose();
+			onKillQueue.Dispose(sendKillHandle);
 		}
+
+	}
+
+	private struct SendKillMessageJob : IJob
+	{
+		[Unity.Collections.LowLevel.Unsafe.NativeSetThreadIndex]
+		public int nativeThreadIndex;
+		[ReadOnly]
+		public NativeArray<UnsafeList<EventMsg>> threadQueue;
+		//[ReadOnly]
+		public NativeQueue<ECTuple<OnKill>> onKillQueue;
+
+		public unsafe void Execute()
+		{
+			var p_threadQueue = (UnsafeList<EventMsg>*)threadQueue.GetUnsafeReadOnlyPtr();
+
+			while (onKillQueue.TryDequeue(out var tuple))
+			{
+				//var audioMessage = new AudioSystem.AudioMessage() { audioFile = tuple.component.sfxName, type = SystemMessageType.Audio_Sfx };
+				//audioQueue.Enqueue(audioMessage);
+
+				p_threadQueue[nativeThreadIndex].Add(new EventMsg() { type = EventMsgType.Kill, target = tuple.e });
+				//AudioManager.instance.PlaySfxRequest(tuple.component.sfxName.ConvertToString());
+				//int i = 0;
+				//i++;
+				//GameManager.instance.AddPoints(tuple.component.pointValue);
+			}
+
+		}
+	}
+
+}
+
+
+
+public class ExampleSystem : SystemBase
+{
+
+	[Unity.Collections.LowLevel.Unsafe.NativeSetThreadIndex]
+	public int nativeThreadIndex;
+
+	private struct ExampleJob2 : IJob
+	{
+
+		[Unity.Collections.LowLevel.Unsafe.NativeSetThreadIndex]
+		public int nativeThreadIndex;
+
+		public void Execute()
+		{
+			UnityEngine.Debug.Log($"ExampleSystem: ExampleJob2 (IJob) threadIndex={nativeThreadIndex}");  //1 to 16.  never zero.
+		}
+
+	
+		
+	}
+
+	protected override void OnUpdate()
+	{
+		
+
+		var nativeThreadIndex = this.nativeThreadIndex;
+		Job.WithCode(() =>
+		{
+			UnityEngine.Debug.Log($"ExampleSystem: Job.WithCode() threadIndex={nativeThreadIndex}");  //always zero
+		})
+			.Schedule();
+
+		var example2Job = new ExampleJob2();
+		example2Job.Schedule().Complete();
 	}
 }
 
