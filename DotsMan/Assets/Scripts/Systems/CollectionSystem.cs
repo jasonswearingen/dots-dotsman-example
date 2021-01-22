@@ -200,3 +200,6 @@ unsafe public class CollectionSystem : SystemBase
 	private EntityQuery _query = new EntityQuery();
 
 }
+
+
+

@@ -63,7 +63,7 @@ public unsafe class MessageSystem : SystemBase
 		public UnsafeList<EventMsg>* p_threadQueue;
 		[NativeDisableParallelForRestriction, ReadOnly]
 		public ComponentDataFromEntity<OnKill> onKillData;
-		[NativeDisableParallelForRestriction]
+		[NativeDisableParallelForRestriction, NativeDisableContainerSafetyRestriction]
 		public NativeQueue<AudioSystem.AudioMessage>.ParallelWriter audioIn;
 		[NativeDisableParallelForRestriction, ReadOnly]
 		public EntityManager em;
@@ -150,3 +150,36 @@ public unsafe class MessageSystem : SystemBase
 	}
 }
 
+//// A Test behaves as an ordinary method
+//[Test]
+//[Category("ecs lowlevel")]
+//public void NativeStreamBasic()
+//{
+//	// Use the Assert class to test conditions
+//	//Assert.IsTrue(false,"boomtest");
+
+//	var stream = new NativeStream();
+//	var writer = stream.AsWriter();
+//	var reader = stream.AsReader();
+
+//	for (var i = 0; i < 100; i++)
+//	{
+//		if (i % 2 == 0)
+//		{
+//			ref int x = ref writer.Allocate<int>();
+//			x = i;
+//		}
+//		else
+//		{
+//			writer.Write(i);
+//		}
+//	}
+
+//	for (var i = 0; i < 100; i++)
+//	{
+//		var result = reader.Read<int>();
+//		Assert.AreEqual(i, result);
+//	}
+
+//	stream.Dispose();
+//}

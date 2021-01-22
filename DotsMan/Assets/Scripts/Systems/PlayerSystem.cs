@@ -28,7 +28,13 @@ public class PlayerSystem : SystemBase
 
 		var ecbSystem = World.GetOrCreateSystem<EndSimulationEntityCommandBufferSystem>();
 		var ecb = ecbSystem.CreateCommandBuffer().AsParallelWriter();
+
+		var audioQueue = AudioSystem.messageIn;
+		var powerupMusicFile = new FixedString64("powerup");
+		var gameMusicFile = new FixedString64("game");
+
 		Entities
+			.WithNativeDisableContainerSafetyRestriction(audioQueue)
 			.WithAll<Player>()
 			.ForEach((Entity playerEntity, int entityInQueryIndex, ref Health hp, ref PowerPill pill, ref Damage dmg) =>
 			{
@@ -36,8 +42,10 @@ public class PlayerSystem : SystemBase
 				hp.invincibleTimer = pill.pillTimer;
 				dmg.value = 100;
 
+				audioQueue.Enqueue(new AudioSystem.AudioMessage() { type = SystemMessageType.Audio_Music, audioFile = powerupMusicFile });
 				if (pill.pillTimer <= 0)
 				{
+					audioQueue.Enqueue(new AudioSystem.AudioMessage() { type = SystemMessageType.Audio_Music, audioFile = gameMusicFile });
 					ecb.RemoveComponent<PowerPill>(entityInQueryIndex, playerEntity);
 					dmg.value = 0;
 				}

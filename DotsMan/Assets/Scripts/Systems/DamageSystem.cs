@@ -9,6 +9,7 @@ using Unity.Physics.Systems;
 using Assets.Scripts.Components;
 using Unity.Collections.LowLevel.Unsafe;
 
+[BurstCompile]
 [UpdateAfter(typeof(EndFramePhysicsSystem))] //seems not needed anymore
 [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
 public class DamageSystem : SystemBase
@@ -16,17 +17,9 @@ public class DamageSystem : SystemBase
 
 
 
-
-	//protected override void OnCreate()
-	//{
-	//   }
-	//protected override void OnDestroy()
-	//{
-
-	//}
-
 	[Unity.Collections.LowLevel.Unsafe.NativeSetThreadIndex]
 	public int nativeThreadIndex;
+	[BurstCompile]
 	protected override void OnUpdate()
 	{
 		var dt = Time.DeltaTime;
@@ -69,6 +62,7 @@ public class DamageSystem : SystemBase
 			var onKillQueue = new NativeQueue<ECTuple<OnKill>>(Allocator.TempJob);
 			//var tst = new NativeList<ECTuple<OnKill>>(Allocator.TempJob);
 
+			var eventQueueWriter = this.eventQueueWriter;
 
 
 			Entities
@@ -83,6 +77,7 @@ public class DamageSystem : SystemBase
 						var onKill = GetComponent<OnKill>(e);
 						//sfxPlay.Enqueue(onKill.sfxName);
 						onKillQueue.Enqueue(new ECTuple<OnKill>() { e = e, component = onKill });
+						eventQueueWriter.Enqueue(new ECTuple<OnKill>() { e = e, component = onKill });
 						if (HasComponent<Translation>(onKill.spawnPrefab)) //non-burst: EntityManager.Exists(onKill.spawnPrefab)
 						{
 							var spawned = ecb.Instantiate(entityInQueryIndex, onKill.spawnPrefab);
@@ -96,6 +91,12 @@ public class DamageSystem : SystemBase
 				}
 			}).Schedule();
 			ecbSystem.AddJobHandleForProducer(this.Dependency); //note that the ecbSystem needs to wait for this DamageSystem to complete
+
+			this.Dependency.Complete();
+			while(eventQueue.TryDequeue(out var item)){
+				UnityEngine.Debug.LogWarning("Event!");
+	}
+
 
 			var audioQueue = AudioSystem.messageIn;
 
@@ -132,9 +133,28 @@ public class DamageSystem : SystemBase
 			//onKillQueue.com
 			//sfxPlay.Dispose();
 			onKillQueue.Dispose(sendKillHandle);
+
 		}
 
+
 	}
+
+
+	public event System.EventHandler OnKill;
+	public struct OnKillEvent { }
+	private NativeQueue<ECTuple<OnKill>> eventQueue;
+	private NativeQueue<ECTuple<OnKill>>.ParallelWriter eventQueueWriter;
+
+	protected override void OnCreate()
+	{
+		eventQueue = new NativeQueue<ECTuple<OnKill>>(Allocator.Persistent);
+		eventQueueWriter = eventQueue.AsParallelWriter();
+	}
+	protected override void OnDestroy()
+	{
+		eventQueue.Dispose();
+	}
+
 
 	private struct SendKillMessageJob : IJob
 	{
@@ -182,7 +202,8 @@ public class ExampleSystem : SystemBase
 
 		public void Execute()
 		{
-			UnityEngine.Debug.Log($"ExampleSystem: ExampleJob2 (IJob) threadIndex={nativeThreadIndex}");  //1 to 16.  never zero.
+			//UnityEngine.Debug.Log($"ExampleSystem: ExampleJob2 (IJob) threadIndex={nativeThreadIndex}");  //1 to 16.  never zero.
+			UnityEngine.Debug.Log($"ExampleSystem: ExampleJob2 (IJob) ");  //1 to 16.  never zero.
 		}
 
 	
@@ -191,18 +212,20 @@ public class ExampleSystem : SystemBase
 
 	protected override void OnUpdate()
 	{
-		
-
 		var nativeThreadIndex = this.nativeThreadIndex;
 		Job.WithCode(() =>
 		{
+			//UnityEngine.Debug.Log($"ExampleSystem: Job.WithCode() threadIndex={nativeThreadIndex}");  //always zero
 			UnityEngine.Debug.Log($"ExampleSystem: Job.WithCode() threadIndex={nativeThreadIndex}");  //always zero
 		})
 			.Schedule();
 
 		var example2Job = new ExampleJob2();
 		example2Job.Schedule().Complete();
+
 	}
+
+	
 }
 
 public struct ECTuple<TComponent>
