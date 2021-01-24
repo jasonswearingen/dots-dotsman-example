@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 
 //[BurstCompile]
+[TestFixture]
 [Category("dots lowlevel")]
 public class NativeCollectionTests
 {
@@ -68,6 +69,37 @@ public class NativeCollectionTests
 
 		stream.Dispose();
 	}
+
+
+	//[Test]
+	//[Category("ecs lowlevel")]
+	//public void FixedString64Null()
+	//{
+	//	var fStr = new FixedString64("hello");
+
+	//	if (fStr != null)
+	//	{
+
+	//	}
+	//	else
+	//	{
+	//		Assert.IsTrue(false, "fStr is null?");
+	//	}
+
+	//}
+	[Test]
+	[Category("ecs lowlevel")]
+	public void FixedString64Empty()
+	{
+		var fStrEmpty = new FixedString64("");
+		var fStrDefault = default(FixedString64);
+
+		Assert.AreEqual(0, fStrEmpty.Length);
+		Assert.AreEqual(0, fStrDefault.Length);
+		Assert.IsTrue(fStrEmpty == fStrDefault);
+		Assert.IsTrue(fStrEmpty == default(FixedString64));
+	}
+
 
 	[Test]
 	[Category("ecs lowlevel")]

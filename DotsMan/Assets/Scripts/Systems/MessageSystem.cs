@@ -64,7 +64,7 @@ public unsafe class MessageSystem : SystemBase
 		[NativeDisableParallelForRestriction, ReadOnly]
 		public ComponentDataFromEntity<OnKill> onKillData;
 		[NativeDisableParallelForRestriction, NativeDisableContainerSafetyRestriction]
-		public NativeQueue<AudioSystem.AudioMessage>.ParallelWriter audioIn;
+		public NativeQueue<AudioSystem.AudioMessage>.ParallelWriter audioQueue;
 		[NativeDisableParallelForRestriction, ReadOnly]
 		public EntityManager em;
 
@@ -94,7 +94,7 @@ public unsafe class MessageSystem : SystemBase
 					{
 						var onKill = onKillData[msg.target];
 						//var onKill = em.GetComponentData<OnKill>(msg.target);  //dots bug: https://forum.unity.com/threads/in-a-ijobparallelfor-can-not-use-entitymanager.1042306/
-						audioIn.Enqueue(new AudioSystem.AudioMessage() { type = SystemMessageType.Audio_Sfx, audioFile = onKill.sfxName });                                                                                                                                     //onKill.
+						audioQueue.Enqueue(new AudioSystem.AudioMessage() { type = SystemMessageType.Audio_Sfx, audioFile = onKill.sfxName });                                                                                                                                     //onKill.
 					}
 					break;
 			}
@@ -135,7 +135,7 @@ public unsafe class MessageSystem : SystemBase
 		var job = new EventMsgParseJob()
 		{
 
-			audioIn = AudioSystem.messageIn,
+			audioQueue = AudioSystem.messageIn,
 			em = this.EntityManager,
 			threadQueue = threadQueue,
 			p_threadQueue = (UnsafeList<EventMsg>*)threadQueue.GetUnsafePtr(),

@@ -8,6 +8,7 @@ using Unity.Transforms;
 using Unity.Physics.Systems;
 using Assets.Scripts.Components;
 using Unity.Collections.LowLevel.Unsafe;
+using UnityEngine;
 
 [BurstCompile]
 [UpdateAfter(typeof(EndFramePhysicsSystem))] //seems not needed anymore
@@ -200,6 +201,7 @@ public class ExampleSystem : SystemBase
 		[Unity.Collections.LowLevel.Unsafe.NativeSetThreadIndex]
 		public int nativeThreadIndex;
 
+		
 		public void Execute()
 		{
 			//UnityEngine.Debug.Log($"ExampleSystem: ExampleJob2 (IJob) threadIndex={nativeThreadIndex}");  //1 to 16.  never zero.
@@ -221,8 +223,7 @@ public class ExampleSystem : SystemBase
 			.Schedule();
 
 		var example2Job = new ExampleJob2();
-		example2Job.Schedule().Complete();
-
+		example2Job.Schedule().Complete();	
 	}
 
 	
