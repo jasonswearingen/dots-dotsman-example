@@ -86,14 +86,14 @@ namespace Assets.Scripts.Systems
 				//	enemy.init();
 				//}
 				//if (!wasInit || math.distance(trans.Value, enemy.lastCell) > 0.9f)
-				if ((math.distance(trans.Value, enemy.lastCell) > 0.9f) )// || trans.Value.Equals(enemy.lastPos))//|| mov.direction.Equals(float3.zero))
+				if ((math.distance(trans.Value, enemy.lastCell) > 0.9f))// || trans.Value.Equals(enemy.lastPos))//|| mov.direction.Equals(float3.zero))
 				{
 
 					Debug.Log("in enemy move section!");
 
 					enemy.lastCell = math.round(trans.Value);
 
-					
+
 
 
 
@@ -111,7 +111,7 @@ namespace Assets.Scripts.Systems
 					{
 						Debug.Log("hit z-1");
 					}
-					if (!raycaster.CheckRay( trans.Value,  new float3(0, 0, 1),  ref mov.direction))
+					if (!raycaster.CheckRay(trans.Value, new float3(0, 0, 1), ref mov.direction))
 					{
 						validDir.Add(new float3(0, 0, 1));
 					}
@@ -119,7 +119,7 @@ namespace Assets.Scripts.Systems
 					{
 						Debug.Log("hit z 1");
 					}
-					if (!raycaster.CheckRay( trans.Value, new float3(-1, 0, 0),  ref mov.direction))
+					if (!raycaster.CheckRay(trans.Value, new float3(-1, 0, 0), ref mov.direction))
 					{
 						validDir.Add(new float3(-1, 0, 0));
 					}
@@ -127,7 +127,7 @@ namespace Assets.Scripts.Systems
 					{
 						Debug.Log("hit x-1");
 					}
-					if (!raycaster.CheckRay( trans.Value,  new float3(1, 0, 0),  ref mov.direction))
+					if (!raycaster.CheckRay(trans.Value, new float3(1, 0, 0), ref mov.direction))
 					{
 						validDir.Add(new float3(1, 0, 0));
 					}
@@ -199,13 +199,78 @@ namespace Assets.Scripts.Systems
 				enemy.lastPos = trans.Value;
 
 			}).ScheduleParallel();
-			//Job.WithCode(() => {
-			//	this.rand = rand;
-			//}).Schedule();
+
+			this.Dependency.Complete(); //ensure completes this frame
+										//Job.WithCode(() => {
+										//	this.rand = rand;
+										//}).Schedule();
 
 
 
 		}
+
+		//protected override void OnUpdate2()
+		//{
+		//	var raycaster = new MovementRayCast() { pw = World.GetOrCreateSystem<BuildPhysicsWorld>().PhysicsWorld };
+		//	this.rand.NextInt();
+		//	var rand = this.rand;
+		//	Entities.ForEach((int nativeThreadIndex, ref Movable mov, ref Enemy enemy, in Translation trans) =>
+		//	{
+		//		if ((math.distance(trans.Value, enemy.lastCell) > 0.9f))
+		//		{
+		//			enemy.lastCell = math.round(trans.Value);
+		//			//raycast here
+		//			var validDir = new NativeList<float3>(Allocator.Temp);
+
+		//			if (!raycaster.CheckRay(trans.Value, new float3(0, 0, -1), ref mov.direction))
+		//			{
+		//				validDir.Add(new float3(0, 0, -1));
+		//			}
+		//			else
+		//			{
+		//				Debug.Log("hit z-1");
+		//			}
+		//			if (!raycaster.CheckRay(trans.Value, new float3(0, 0, 1), ref mov.direction))
+		//			{
+		//				validDir.Add(new float3(0, 0, 1));
+		//			}
+		//			else
+		//			{
+		//				Debug.Log("hit z 1");
+		//			}
+		//			if (!raycaster.CheckRay(trans.Value, new float3(-1, 0, 0), ref mov.direction))
+		//			{
+		//				validDir.Add(new float3(-1, 0, 0));
+		//			}
+		//			else
+		//			{
+		//				Debug.Log("hit x-1");
+		//			}
+		//			if (!raycaster.CheckRay(trans.Value, new float3(1, 0, 0), ref mov.direction))
+		//			{
+		//				validDir.Add(new float3(1, 0, 0));
+		//			}
+		//			else
+		//			{
+		//				Debug.Log("hit x 11");
+		//			}
+		//			if (validDir.Length == 0)
+		//			{
+		//				Debug.Log("Empty");
+		//			}
+		//			else
+		//			{
+
+		//				Debug.Log("FULL");
+		//				mov.direction = validDir[rand.NextInt(validDir.Length)];
+
+		//			}
+		//			validDir.Dispose();
+		//		}
+		//		enemy.lastPos = trans.Value;
+
+		//	}).ScheduleParallel();
+		//}
 
 
 

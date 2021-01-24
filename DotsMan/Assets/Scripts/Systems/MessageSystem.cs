@@ -84,6 +84,8 @@ public unsafe class MessageSystem : SystemBase
 			p_threadQueue[index].Clear();
 		}
 
+
+
 		private void _processMsg(ref EventMsg msg)
 		{
 			switch (msg.type)
