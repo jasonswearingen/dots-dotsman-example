@@ -1,9 +1,10 @@
-﻿using NUnit.Framework;
-using System.Runtime.InteropServices;
+using NUnit.Framework;
 using Unity.Entities;
+using Unity.Jobs;
 using UnityEngine;
 
-// Credit to https://github.com/5argon/EcsTesting\
+
+// Credit to https://gist.github.com/sarkahn/3f949ba912e9110e1620113133e31833 and https://github.com/5argon/EcsTesting\
 public class ECSTestBase
 {
     protected World World { get; private set; }
@@ -23,6 +24,8 @@ public class ECSTestBase
         // world update. This will cause a structural  change which 
         // could invalidate certain state during testing
         World.Update();
+
+       
     }
 
     [TearDown]
@@ -42,10 +45,11 @@ public class ECSTestBase
     }
 
     public void MakeEntity()
-	{
+    {
         EntityManager em = World.DefaultGameObjectInjectionWorld.EntityManager;
-        em.CreateEntity();
-	}
+        var ent = em.CreateEntity();
+        em.AddComponentData(ent, new TimeComponent());
+    }
 }
 
 [TestFixture]
@@ -54,54 +58,55 @@ public class EcsTests : ECSTestBase
 {
     [UnityEngine.TestTools.UnityTest]
     public System.Collections.IEnumerator EcsBasic()
-	{
-        //AddSystemToWorld<TimeSystem>();
-        //MakeEntity();
+    {
+        AddSystemToWorld<TimeSystem>();
+        MakeEntity();
         World.Update();
         Debug.LogWarning("finish setup");
 
-		while (true)
-		{
+        while (true)
+        {
             Debug.LogWarning("loop");
-            //World.Update();
+            World.Update();
             yield return null;
-		}
-	}
+        }
+    }
 }
 
 
 public struct TimeComponent : IComponentData
 {
-    public float dt;
-    public double et;
-    public long frame;
+	public float dt;
+	public double et;
+	public long frame;
 }
 
 [AlwaysUpdateSystem]
 public class TimeSystem : SystemBase
 {
-    private long frame;
+	private long frame;
 
 	protected override void OnCreate()
 	{
 		base.OnCreate();
-        frame = 0;
+		frame = 0;
 	}
-    
+
 	protected override void OnUpdate()
 	{
-        Debug.LogWarning("TimeSystem.OnUpdate()");
-        var dt = Time.DeltaTime;
-        var et = Time.ElapsedTime;
-        var frame = this.frame++;
+		Debug.LogWarning("TimeSystem.OnUpdate()");
+		var dt = Time.DeltaTime;
+		var et = Time.ElapsedTime;
+		var frame = this.frame++;
 
 
-        Entities.ForEach((ref TimeComponent time) =>
-        {
-            time.dt = dt;
-            time.et = et;
-            time.frame = frame;
-        }).ScheduleParallel();
+		Entities.ForEach((ref TimeComponent time) =>
+		{
+			time.dt = dt;
+			time.et = et;
+			time.frame = frame;
+		}).ScheduleParallel();
 
 	}
 }
+
